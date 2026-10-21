@@ -102,7 +102,8 @@ th.num,td.num{text-align:right}
           </select>
         </label>
         <label>Valor total (R$)<input id="valor" type="number" step="0.01" min="0.01" inputmode="decimal" required></label>
-        <label>Preço por litro (R$)<input id="precoLitro" type="number" step="0.001" min="0.001" inputmode="decimal" required></label>
+        <label>Preço por litro (R$) <span class="muted">(opcional)</span><input id="precoLitro" type="number" step="0.001" min="0.001" inputmode="decimal"></label>
+        <label>Litros <span class="muted">(opcional, se não informar o preço por litro)</span><input id="litros" type="number" step="0.001" min="0.001" inputmode="decimal"></label>
         <label>Odômetro (km)<input id="odometro" type="number" step="1" min="0" inputmode="numeric" required></label>
         <p id="litrosCalc" class="muted" style="margin:0 0 12px"></p>
         <button type="submit">Salvar abastecimento</button>
@@ -302,18 +303,24 @@ function litrosPrevistos() {
 
 function atualizarLitros() {
   const l = litrosPrevistos();
-  $("litrosCalc").textContent = l ? `Litros: ${fmt(l, 2)}` : "";
+  $("litrosCalc").textContent = l && !$("litros").value ? `Litros calculados: ${fmt(l, 2)}` : "";
 }
 $("valor").oninput = atualizarLitros;
 $("precoLitro").oninput = atualizarLitros;
+$("litros").oninput = atualizarLitros;
 
 $("refuelForm").onsubmit = async (e) => {
   e.preventDefault();
   $("refuelMsg").textContent = "";
   const valor = Number($("valor").value);
-  const preco = Number($("precoLitro").value);
+  const precoInformado = Number($("precoLitro").value) || null;
+  const litrosInformados = Number($("litros").value) || null;
   const odo = Number($("odometro").value);
-  const litros = valor / preco;
+  const litros = litrosInformados || (precoInformado ? valor / precoInformado : null);
+  if (!litros) {
+    $("refuelMsg").textContent = "Informe os litros ou o preço por litro.";
+    return;
+  }
 
   const maior = abastecimentos.reduce((m, r) => Math.max(m, Number(r.odometro)), -Infinity);
   if (abastecimentos.length && odo <= maior) {
@@ -326,7 +333,7 @@ $("refuelForm").onsubmit = async (e) => {
     data: $("data").value,
     combustivel: $("combustivel").value,
     valor_total: valor,
-    preco_litro: preco,
+    preco_litro: precoInformado,
     litros: Number(litros.toFixed(3)),
     odometro: odo,
   });

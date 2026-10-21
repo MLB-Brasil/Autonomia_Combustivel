@@ -13,7 +13,7 @@ create table if not exists public.fuel_refuels (
   data date not null,
   combustivel text not null check (combustivel in ('Gasolina Comum', 'Gasolina Aditivada', 'Etanol', 'Diesel')),
   valor_total numeric(10,2) not null check (valor_total > 0),
-  preco_litro numeric(6,3) not null check (preco_litro > 0),
+  preco_litro numeric(6,3) check (preco_litro is null or preco_litro > 0),
   litros numeric(8,3) not null check (litros > 0),
   odometro integer not null check (odometro >= 0),
   created_at timestamptz not null default now()
@@ -37,3 +37,7 @@ create policy "fuel_refuels_own" on public.fuel_refuels
 -- update public.fuel_refuels set combustivel = 'Gasolina Comum' where combustivel = 'Gasolina';
 -- alter table public.fuel_refuels add constraint fuel_refuels_combustivel_check
 --   check (combustivel in ('Gasolina Comum', 'Gasolina Aditivada', 'Etanol', 'Diesel'));
+-- alter table public.fuel_refuels alter column preco_litro drop not null;
+-- alter table public.fuel_refuels drop constraint if exists fuel_refuels_preco_litro_check;
+-- alter table public.fuel_refuels add constraint fuel_refuels_preco_litro_check
+--   check (preco_litro is null or preco_litro > 0);
