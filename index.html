@@ -29,14 +29,18 @@ label{display:block;font-size:.85rem;color:var(--muted);margin-bottom:10px}
 input,select{width:100%;padding:11px;border:1px solid var(--border);border-radius:10px;font-size:1rem;margin-top:4px;background:var(--card);color:var(--text)}
 button{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:11px 16px;font-size:1rem;cursor:pointer;width:100%;font-weight:600}
 button.secondary{background:transparent;color:var(--accent);border:1px solid var(--accent);width:auto;padding:8px 14px;font-size:.9rem}
+button.perigo{background:transparent;color:var(--bad);border:1px solid var(--bad);width:auto;padding:8px 14px;font-size:.9rem}
 button.link{background:none;color:var(--accent);width:auto;padding:0;font-weight:500}
 button:disabled{opacity:.6;cursor:default}
 .muted{color:var(--muted)}
 .row{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
-.acoes{display:flex;gap:8px;margin-top:12px}
-.acoes button{flex:1}
+.acoes{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.acoes button{flex:1;min-width:110px}
 .msg{font-size:.9rem;margin-top:8px;color:var(--bad)}
 .hidden{display:none!important}
+
+/* Seletor de veículo */
+.seletor{width:auto;min-width:220px;margin:0;font-weight:600;font-size:1.05rem}
 
 /* Destaque */
 .hero{background:linear-gradient(135deg,rgba(42,120,214,.12),rgba(42,120,214,0));}
@@ -91,13 +95,15 @@ th.num,td.num{text-align:right}
   </section>
 
   <section id="profileView" class="card hidden">
-    <h2>Dados do veículo</h2>
+    <h2 id="perfilTitulo">Novo veículo</h2>
     <form id="profileForm">
+      <input type="hidden" id="veiculoId">
       <label>Nome do veículo<input id="veiculo" placeholder="Ex.: Gol 2018" required></label>
       <label>Capacidade do tanque (litros)<input id="capacidade" type="number" step="0.1" min="1" inputmode="decimal" required></label>
       <div class="acoes">
         <button type="submit">Salvar</button>
         <button type="button" class="secondary hidden" id="profileCancel">Voltar</button>
+        <button type="button" class="perigo hidden" id="excluirVeiculo">Excluir veículo</button>
       </div>
     </form>
     <div id="profileMsg" class="msg"></div>
@@ -105,16 +111,17 @@ th.num,td.num{text-align:right}
 
   <section id="appView" class="hidden">
     <div class="row" style="margin-bottom:12px">
-      <h2 id="saudacao" style="margin:0"></h2>
+      <select id="seletorVeiculo" class="seletor" aria-label="Veículo"></select>
       <div class="row">
-        <button type="button" class="secondary" id="editarBtn">Editar veículo</button>
+        <button type="button" class="secondary" id="novoVeiculoBtn">+ Veículo</button>
+        <button type="button" class="secondary" id="editarBtn">Editar</button>
         <button type="button" class="secondary" id="logoutBtn">Sair</button>
       </div>
     </div>
 
     <div class="card hero">
       <div class="rotulo">Autonomia média por tanque</div>
-      <div class="valor" id="heroAut">—<small></small></div>
+      <div class="valor" id="heroAut">—</div>
       <div class="row">
         <span class="chip neutro" id="heroDelta">Registre abastecimentos com litros</span>
         <span class="muted" id="heroCap"></span>
@@ -201,11 +208,13 @@ const cfg = window.AUTONOMIA_CONFIG || {};
 const configOk = /^https:\/\/.+\.supabase\.co$/i.test(cfg.supabaseUrl || "") && Boolean(cfg.supabaseAnonKey) && Boolean(window.supabase);
 const db = configOk ? window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey) : null;
 const PENDENTE = "autonomia.pendente";
+const VEICULO_ATIVO = "autonomia.veiculoAtivo";
 const COMBUSTIVEIS = ["Gasolina Comum", "Gasolina Aditivada", "Etanol", "Diesel"];
 
 let modoCadastro = false;
 let user = null;
-let perfil = null;
+let veiculos = [];
+let veiculoAtivoId = null;
 let abastecimentos = [];
 let graficos = {};
 
@@ -215,6 +224,7 @@ const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&
 const formatarData = (s) => s.split("-").reverse().join("/");
 const hoje = () => new Date().toISOString().slice(0, 10);
 const media = (arr) => (arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : null);
+const veiculoAtual = () => veiculos.find((v) => v.id === veiculoAtivoId) || null;
 
 function setView(view) {
   $("authView").classList.toggle("hidden", view !== "auth");
@@ -247,7 +257,7 @@ $("authForm").onsubmit = async (e) => {
     if (modoCadastro) {
       const capacidade = Number($("capacidadeCad").value);
       if (!(capacidade > 0)) throw new Error("Informe a capacidade do tanque.");
-      // Guarda os dados do veículo: são gravados assim que a sessão existir (inclusive após confirmar o e-mail).
+      // Guarda o primeiro veículo: é gravado assim que a sessão existir (inclusive após confirmar o e-mail).
       localStorage.setItem(PENDENTE, JSON.stringify({ veiculo: $("veiculoCad").value.trim(), capacidade }));
       const { data, error } = await db.auth.signUp({ email, password: senha });
       if (error) { localStorage.removeItem(PENDENTE); throw error; }
@@ -269,21 +279,22 @@ $("logoutBtn").onclick = async () => { await db.auth.signOut(); };
 
 async function carregarSessao(session) {
   user = session?.user || null;
-  if (!user) { perfil = null; abastecimentos = []; setView("auth"); return; }
+  if (!user) { veiculos = []; veiculoAtivoId = null; abastecimentos = []; setView("auth"); return; }
 
   try {
     const pend = JSON.parse(localStorage.getItem(PENDENTE) || "null");
     if (pend) {
-      const { error } = await db.from("fuel_profiles").upsert({ user_id: user.id, nome_veiculo: pend.veiculo || "Meu veículo", capacidade_tanque: pend.capacidade });
+      const { error } = await db.from("fuel_vehicles").insert({ user_id: user.id, nome_veiculo: pend.veiculo || "Meu veículo", capacidade_tanque: pend.capacidade });
       if (error) throw error;
       localStorage.removeItem(PENDENTE);
     }
 
-    const { data, error } = await db.from("fuel_profiles").select("nome_veiculo,capacidade_tanque").eq("user_id", user.id).maybeSingle();
-    if (error) throw error;
-    perfil = data;
+    await carregarVeiculos();
+    if (!veiculos.length) { abrirVeiculo(null, false); return; }
 
-    if (!perfil) { abrirPerfil(false); return; }
+    const salvo = localStorage.getItem(VEICULO_ATIVO);
+    veiculoAtivoId = veiculos.some((v) => v.id === salvo) ? salvo : veiculos[0].id;
+    renderSeletor();
     await carregarAbastecimentos();
     renderTudo();
     setView("app");
@@ -295,31 +306,91 @@ async function carregarSessao(session) {
 
 db?.auth.onAuthStateChange((_evento, session) => carregarSessao(session));
 
+async function carregarVeiculos() {
+  const { data, error } = await db.from("fuel_vehicles").select("id,nome_veiculo,capacidade_tanque").eq("user_id", user.id).order("created_at", { ascending: true });
+  if (error) throw error;
+  veiculos = data || [];
+  renderSeletor();
+}
+
 async function carregarAbastecimentos() {
-  const { data, error } = await db.from("fuel_refuels").select("*").eq("user_id", user.id).order("odometro", { ascending: true });
+  abastecimentos = [];
+  if (!veiculoAtivoId) return;
+  const { data, error } = await db.from("fuel_refuels").select("*").eq("vehicle_id", veiculoAtivoId).order("odometro", { ascending: true });
   if (error) throw error;
   abastecimentos = data || [];
 }
 
-function abrirPerfil(podeVoltar) {
-  $("veiculo").value = perfil?.nome_veiculo || "";
-  $("capacidade").value = perfil?.capacidade_tanque || "";
+function renderSeletor() {
+  $("seletorVeiculo").innerHTML = veiculos.map((v) => `<option value="${v.id}">${esc(v.nome_veiculo)}</option>`).join("");
+  if (veiculoAtivoId) $("seletorVeiculo").value = veiculoAtivoId;
+}
+
+function salvarAtivo() {
+  localStorage.setItem(VEICULO_ATIVO, veiculoAtivoId);
+}
+
+$("seletorVeiculo").onchange = async (e) => {
+  veiculoAtivoId = e.target.value;
+  salvarAtivo();
+  await carregarAbastecimentos();
+  renderTudo();
+};
+
+/* ---------- Cadastro de veículos ---------- */
+
+// veiculo = null -> novo; senão, edição do veículo informado.
+function abrirVeiculo(veiculo, podeVoltar) {
+  $("perfilTitulo").textContent = veiculo ? "Editar veículo" : "Novo veículo";
+  $("veiculoId").value = veiculo?.id || "";
+  $("veiculo").value = veiculo?.nome_veiculo || "";
+  $("capacidade").value = veiculo?.capacidade_tanque || "";
   $("profileCancel").classList.toggle("hidden", !podeVoltar);
+  $("excluirVeiculo").classList.toggle("hidden", !veiculo);
   $("profileMsg").textContent = "";
   setView("profile");
 }
 
-$("editarBtn").onclick = () => abrirPerfil(true);
+$("novoVeiculoBtn").onclick = () => abrirVeiculo(null, true);
+$("editarBtn").onclick = () => abrirVeiculo(veiculoAtual(), true);
 $("profileCancel").onclick = () => setView("app");
 
 $("profileForm").onsubmit = async (e) => {
   e.preventDefault();
-  const nome = $("veiculo").value.trim();
-  const capacidade = Number($("capacidade").value);
-  const { error } = await db.from("fuel_profiles").upsert({ user_id: user.id, nome_veiculo: nome, capacidade_tanque: capacidade });
+  const id = $("veiculoId").value;
+  const dados = {
+    user_id: user.id,
+    nome_veiculo: $("veiculo").value.trim(),
+    capacidade_tanque: Number($("capacidade").value),
+  };
+  const consulta = id
+    ? db.from("fuel_vehicles").update(dados).eq("id", id).select("id").single()
+    : db.from("fuel_vehicles").insert(dados).select("id").single();
+  const { data, error } = await consulta;
   if (error) { $("profileMsg").textContent = error.message; return; }
-  perfil = { nome_veiculo: nome, capacidade_tanque: capacidade };
+
+  await carregarVeiculos();
+  veiculoAtivoId = data.id;
+  salvarAtivo();
   await carregarAbastecimentos();
+  renderSeletor();
+  renderTudo();
+  setView("app");
+};
+
+$("excluirVeiculo").onclick = async () => {
+  const id = $("veiculoId").value;
+  if (!id) return;
+  if (!confirm("Excluir este veículo e todos os seus abastecimentos? Essa ação não pode ser desfeita.")) return;
+  const { error } = await db.from("fuel_vehicles").delete().eq("id", id);
+  if (error) { $("profileMsg").textContent = error.message; return; }
+
+  await carregarVeiculos();
+  if (!veiculos.length) { veiculoAtivoId = null; abrirVeiculo(null, false); return; }
+  veiculoAtivoId = veiculos[0].id;
+  salvarAtivo();
+  await carregarAbastecimentos();
+  renderSeletor();
   renderTudo();
   setView("app");
 };
@@ -531,10 +602,11 @@ function renderIndicadores(lista, cap) {
 }
 
 function renderTudo() {
-  const cap = Number(perfil.capacidade_tanque);
+  const veiculo = veiculoAtual();
+  if (!veiculo) return;
+  const cap = Number(veiculo.capacidade_tanque);
   const lista = calcular(abastecimentos, cap);
 
-  $("saudacao").textContent = perfil.nome_veiculo;
   renderIndicadores(lista, cap);
   desenharGraficos(lista);
 
@@ -570,6 +642,7 @@ $("litros").oninput = atualizarLitros;
 $("refuelForm").onsubmit = async (e) => {
   e.preventDefault();
   $("refuelMsg").textContent = "";
+  if (!veiculoAtivoId) { $("refuelMsg").textContent = "Cadastre um veículo antes de registrar abastecimentos."; return; }
   const valor = Number($("valor").value);
   const precoInformado = Number($("precoLitro").value) || null;
   const litrosInformados = Number($("litros").value) || null;
@@ -578,12 +651,13 @@ $("refuelForm").onsubmit = async (e) => {
 
   const maior = abastecimentos.reduce((m, r) => Math.max(m, Number(r.odometro)), -Infinity);
   if (abastecimentos.length && odo <= maior) {
-    $("refuelMsg").textContent = `O odômetro precisa ser maior que ${fmt(maior, 0)} km (último registro).`;
+    $("refuelMsg").textContent = `O odômetro precisa ser maior que ${fmt(maior, 0)} km (último registro deste veículo).`;
     return;
   }
 
   const { error } = await db.from("fuel_refuels").insert({
     user_id: user.id,
+    vehicle_id: veiculoAtivoId,
     data: $("data").value,
     combustivel: $("combustivel").value,
     valor_total: valor,
