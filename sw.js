@@ -1,4 +1,4 @@
-const CACHE = "autonomia-v1";
+const CACHE = "autonomia-v2";
 const SHELL = ["./", "index.html", "config.js", "manifest.webmanifest", "icon.svg"];
 
 self.addEventListener("install", (e) => {

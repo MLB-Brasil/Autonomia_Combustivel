@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Autonomia do Veículo</title>
+<title>Autonomia de Combustível</title>
 <meta name="theme-color" content="#1f6feb">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -12,6 +12,8 @@
 *{box-sizing:border-box}
 body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text)}
 header{background:var(--accent);color:#fff;padding:16px 20px}
+header{display:flex;align-items:center;gap:12px}
+header img{width:40px;height:40px;flex-shrink:0}
 header h1{margin:0;font-size:1.2rem}
 main{max-width:640px;margin:0 auto;padding:16px}
 .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px}
@@ -38,7 +40,7 @@ th.num,td.num{text-align:right}
 </style>
 </head>
 <body>
-<header><h1>Autonomia do Veículo</h1></header>
+<header><img src="icon.svg" alt=""><h1>Autonomia de Combustível</h1></header>
 <main>
   <div id="configAlert" class="card hidden">Configure o arquivo <b>config.js</b> com a URL e a chave do Supabase.</div>
 
@@ -93,7 +95,8 @@ th.num,td.num{text-align:right}
         <label>Data<input id="data" type="date" required></label>
         <label>Combustível
           <select id="combustivel" required>
-            <option>Gasolina</option>
+            <option>Gasolina Comum</option>
+            <option>Gasolina Aditivada</option>
             <option>Etanol</option>
             <option>Diesel</option>
           </select>

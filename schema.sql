@@ -11,7 +11,7 @@ create table if not exists public.fuel_refuels (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
   data date not null,
-  combustivel text not null check (combustivel in ('Gasolina', 'Etanol', 'Diesel')),
+  combustivel text not null check (combustivel in ('Gasolina Comum', 'Gasolina Aditivada', 'Etanol', 'Diesel')),
   valor_total numeric(10,2) not null check (valor_total > 0),
   preco_litro numeric(6,3) not null check (preco_litro > 0),
   litros numeric(8,3) not null check (litros > 0),
@@ -31,3 +31,9 @@ create policy "fuel_profiles_own" on public.fuel_profiles
 drop policy if exists "fuel_refuels_own" on public.fuel_refuels;
 create policy "fuel_refuels_own" on public.fuel_refuels
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Migração para bancos criados antes da mudança de combustíveis (rode uma vez):
+-- alter table public.fuel_refuels drop constraint if exists fuel_refuels_combustivel_check;
+-- update public.fuel_refuels set combustivel = 'Gasolina Comum' where combustivel = 'Gasolina';
+-- alter table public.fuel_refuels add constraint fuel_refuels_combustivel_check
+--   check (combustivel in ('Gasolina Comum', 'Gasolina Aditivada', 'Etanol', 'Diesel'));
