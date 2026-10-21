@@ -4,39 +4,70 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Autonomia de Combustível</title>
-<meta name="theme-color" content="#1f6feb">
+<meta name="theme-color" content="#2a78d6">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <style>
-:root{--bg:#f4f6f9;--card:#fff;--text:#1c2430;--muted:#6b7686;--accent:#1f6feb;--danger:#cf222e;--border:#dde2ea}
+:root{
+  --bg:#f4f6fb;--card:#ffffff;--text:#1c2430;--muted:#6b7686;--border:#e3e8f0;
+  --accent:#2a78d6;--good:#006300;--bad:#c2410c;--radius:16px;
+  --shadow:0 1px 2px rgba(16,24,40,.06),0 4px 16px rgba(16,24,40,.06);
+}
+@media (prefers-color-scheme: dark){
+  :root{--bg:#0d0d0d;--card:#1a1a19;--text:#f0efec;--muted:#c3c2b7;--border:#2c2c2a;--accent:#3987e5;--good:#0ca30c;--bad:#ec835a;--shadow:none}
+}
 *{box-sizing:border-box}
 body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text)}
-header{background:var(--accent);color:#fff;padding:16px 20px}
-header{display:flex;align-items:center;gap:12px}
-header img{width:40px;height:40px;flex-shrink:0}
-header h1{margin:0;font-size:1.2rem}
-main{max-width:640px;margin:0 auto;padding:16px}
-.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px}
+header{background:linear-gradient(135deg,#2a78d6,#184f95);color:#fff;padding:18px 20px;display:flex;align-items:center;gap:12px}
+header img{width:44px;height:44px;flex-shrink:0;border-radius:12px}
+header h1{margin:0;font-size:1.15rem;font-weight:700}
+main{max-width:960px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px;box-shadow:var(--shadow)}
 h2{font-size:1rem;margin:0 0 12px}
+h3{font-size:.95rem;margin:0 0 10px;font-weight:600}
 label{display:block;font-size:.85rem;color:var(--muted);margin-bottom:10px}
-input,select{width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:1rem;margin-top:4px;background:#fff;color:var(--text)}
-button{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:11px 16px;font-size:1rem;cursor:pointer;width:100%}
-button.secondary{background:#fff;color:var(--accent);border:1px solid var(--accent);width:auto}
-button.link{background:none;color:var(--accent);width:auto;padding:0}
+input,select{width:100%;padding:11px;border:1px solid var(--border);border-radius:10px;font-size:1rem;margin-top:4px;background:var(--card);color:var(--text)}
+button{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:11px 16px;font-size:1rem;cursor:pointer;width:100%;font-weight:600}
+button.secondary{background:transparent;color:var(--accent);border:1px solid var(--accent);width:auto;padding:8px 14px;font-size:.9rem}
+button.link{background:none;color:var(--accent);width:auto;padding:0;font-weight:500}
 button:disabled{opacity:.6;cursor:default}
-.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.stat{background:#f7f9fc;border-radius:10px;padding:12px}
-.stat span{display:block;font-size:.8rem;color:var(--muted)}
-.stat strong{font-size:1.4rem}
-table{width:100%;border-collapse:collapse;font-size:.9rem}
-th,td{text-align:left;padding:8px 4px;border-bottom:1px solid var(--border)}
-th.num,td.num{text-align:right}
-.msg{font-size:.9rem;margin-top:8px;color:var(--danger)}
 .muted{color:var(--muted)}
 .row{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 .acoes{display:flex;gap:8px;margin-top:12px}
 .acoes button{flex:1}
+.msg{font-size:.9rem;margin-top:8px;color:var(--bad)}
 .hidden{display:none!important}
+
+/* Destaque */
+.hero{background:linear-gradient(135deg,rgba(42,120,214,.12),rgba(42,120,214,0));}
+.hero .rotulo{font-size:.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.hero .valor{font-size:2.6rem;font-weight:800;line-height:1.1;margin:4px 0}
+.hero .valor small{font-size:1rem;font-weight:600;color:var(--muted);margin-left:4px}
+.chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:5px 12px;font-size:.85rem;font-weight:600;border:1px solid currentColor}
+.chip.bom{color:var(--good)}
+.chip.ruim{color:var(--bad)}
+.chip.neutro{color:var(--muted)}
+.barra{height:10px;background:var(--border);border-radius:999px;overflow:hidden;margin-top:14px}
+.barra div{height:100%;background:var(--accent);border-radius:999px;transition:width .4s}
+.barra-legenda{font-size:.8rem;color:var(--muted);margin-top:6px}
+
+/* Indicadores */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow)}
+.kpi span{display:block;font-size:.78rem;color:var(--muted);margin-bottom:4px}
+.kpi strong{font-size:1.25rem;font-weight:700}
+.kpi small{color:var(--muted);margin-left:4px}
+
+/* Gráficos */
+.graficos{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-bottom:16px}
+.graficos .card{margin-bottom:0}
+.caixa{position:relative;height:240px}
+.vazio{color:var(--muted);font-size:.9rem;text-align:center;padding:90px 0}
+
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{text-align:left;padding:9px 4px;border-bottom:1px solid var(--border)}
+th.num,td.num{text-align:right}
+.tabela-scroll{overflow-x:auto}
 </style>
 </head>
 <body>
@@ -73,19 +104,54 @@ th.num,td.num{text-align:right}
   </section>
 
   <section id="appView" class="hidden">
-    <div class="card">
+    <div class="row" style="margin-bottom:12px">
+      <h2 id="saudacao" style="margin:0"></h2>
       <div class="row">
-        <h2 id="saudacao"></h2>
-        <div class="row">
-          <button type="button" class="secondary" id="editarBtn">Editar veículo</button>
-          <button type="button" class="secondary" id="logoutBtn">Sair</button>
-        </div>
+        <button type="button" class="secondary" id="editarBtn">Editar veículo</button>
+        <button type="button" class="secondary" id="logoutBtn">Sair</button>
       </div>
-      <div class="stats">
-        <div class="stat"><span>Autonomia (último abastecimento)</span><strong id="autUltima">—</strong></div>
-        <div class="stat"><span>Autonomia média</span><strong id="autMedia">—</strong></div>
-        <div class="stat"><span>Consumo do último (km/L)</span><strong id="consUltimo">—</strong></div>
-        <div class="stat"><span>Capacidade do tanque</span><strong id="tanqueInfo">—</strong></div>
+    </div>
+
+    <div class="card hero">
+      <div class="rotulo">Autonomia média por tanque</div>
+      <div class="valor" id="heroAut">—<small></small></div>
+      <div class="row">
+        <span class="chip neutro" id="heroDelta">Registre abastecimentos com litros</span>
+        <span class="muted" id="heroCap"></span>
+      </div>
+      <div class="barra"><div id="heroBarra" style="width:0%"></div></div>
+      <div class="barra-legenda" id="heroBarraLegenda"></div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><span>Melhor autonomia</span><strong id="kMelhor">—</strong></div>
+      <div class="kpi"><span>Consumo médio</span><strong id="kConsumo">—</strong><small>km/L</small></div>
+      <div class="kpi"><span>Custo médio por km</span><strong id="kCustoKm">—</strong></div>
+      <div class="kpi"><span>Gasto no mês</span><strong id="kMes">—</strong></div>
+      <div class="kpi"><span>Gasto total</span><strong id="kTotal">—</strong></div>
+      <div class="kpi"><span>Km rodados</span><strong id="kKm">—</strong></div>
+    </div>
+
+    <div class="graficos">
+      <div class="card">
+        <h3>Autonomia por abastecimento (km)</h3>
+        <div class="caixa"><canvas id="cAutonomia"></canvas></div>
+        <p class="vazio hidden" id="vAutonomia">Precisa de pelo menos 2 abastecimentos com litros.</p>
+      </div>
+      <div class="card">
+        <h3>Consumo por abastecimento (km/L)</h3>
+        <div class="caixa"><canvas id="cConsumo"></canvas></div>
+        <p class="vazio hidden" id="vConsumo">Ainda não há consumo calculado.</p>
+      </div>
+      <div class="card">
+        <h3>Gasto por mês (R$)</h3>
+        <div class="caixa"><canvas id="cMensal"></canvas></div>
+        <p class="vazio hidden" id="vMensal">Nenhum abastecimento registrado.</p>
+      </div>
+      <div class="card">
+        <h3>Gasto por combustível (R$)</h3>
+        <div class="caixa"><canvas id="cCombustivel"></canvas></div>
+        <p class="vazio hidden" id="vCombustivel">Nenhum abastecimento registrado.</p>
       </div>
     </div>
 
@@ -113,7 +179,7 @@ th.num,td.num{text-align:right}
 
     <div class="card">
       <h2>Histórico</h2>
-      <div style="overflow-x:auto">
+      <div class="tabela-scroll">
         <table>
           <thead>
             <tr><th>Data</th><th>Comb.</th><th class="num">Litros</th><th class="num">Km</th><th class="num">km/L</th><th class="num">Autonomia</th><th></th></tr>
@@ -127,6 +193,7 @@ th.num,td.num{text-align:right}
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="config.js"></script>
 <script>
 const $ = (id) => document.getElementById(id);
@@ -134,16 +201,20 @@ const cfg = window.AUTONOMIA_CONFIG || {};
 const configOk = /^https:\/\/.+\.supabase\.co$/i.test(cfg.supabaseUrl || "") && Boolean(cfg.supabaseAnonKey) && Boolean(window.supabase);
 const db = configOk ? window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey) : null;
 const PENDENTE = "autonomia.pendente";
+const COMBUSTIVEIS = ["Gasolina Comum", "Gasolina Aditivada", "Etanol", "Diesel"];
 
 let modoCadastro = false;
 let user = null;
 let perfil = null;
 let abastecimentos = [];
+let graficos = {};
 
 const fmt = (n, d = 1) => Number(n).toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d });
+const brl = (n) => Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const formatarData = (s) => s.split("-").reverse().join("/");
 const hoje = () => new Date().toISOString().slice(0, 10);
+const media = (arr) => (arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : null);
 
 function setView(view) {
   $("authView").classList.toggle("hidden", view !== "auth");
@@ -257,30 +328,217 @@ $("profileForm").onsubmit = async (e) => {
 
 // Consumo = km rodados desde o abastecimento anterior ÷ litros deste abastecimento.
 // Autonomia = consumo × capacidade do tanque (assume que o tanque foi completado em cada abastecimento).
+// Custo por km = valor pago ÷ km rodados desde o abastecimento anterior.
 function calcular(lista, capacidade) {
   return lista.map((r, i) => {
     const anterior = lista[i - 1];
     const km = anterior ? Number(r.odometro) - Number(anterior.odometro) : null;
     const consumo = km > 0 && r.litros ? km / Number(r.litros) : null;
     const autonomia = consumo ? consumo * capacidade : null;
-    return { ...r, km, consumo, autonomia };
+    const custoKm = km > 0 ? Number(r.valor_total) / km : null;
+    return { ...r, km, consumo, autonomia, custoKm };
   });
+}
+
+function gastoPorMes(lista) {
+  const mapa = {};
+  lista.forEach((r) => {
+    const k = r.data.slice(0, 7);
+    mapa[k] = (mapa[k] || 0) + Number(r.valor_total);
+  });
+  const chaves = Object.keys(mapa).sort();
+  return {
+    labels: chaves.map((k) => { const [ano, mes] = k.split("-"); return `${mes}/${ano.slice(2)}`; }),
+    valores: chaves.map((k) => mapa[k]),
+  };
+}
+
+/* ---------- Visual ---------- */
+
+// Paleta do skill dataviz (referência): categóricas em ordem fixa; magnitude em azul.
+function temaGrafico() {
+  const escuro = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  return escuro
+    ? { series: ["#3987e5", "#d95926", "#199e70", "#c98500"], primaria: "#3987e5", texto: "#c3c2b7", grade: "#2c2c2a", superficie: "#1a1a19" }
+    : { series: ["#2a78d6", "#eb6834", "#1baf7a", "#eda100"], primaria: "#2a78d6", texto: "#52514e", grade: "#e1e0d9", superficie: "#fcfcfb" };
+}
+
+function mostrarGrafico(canvasId, vazioId, temDados) {
+  $(canvasId).classList.toggle("hidden", !temDados);
+  $(vazioId).classList.toggle("hidden", temDados);
+}
+
+function criarGrafico(id, config) {
+  if (graficos[id]) graficos[id].destroy();
+  graficos[id] = new Chart($(id), config);
+}
+
+function opcoesBase(t, extras = {}) {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: "index", intersect: false },
+    plugins: { legend: { display: false }, tooltip: { padding: 10, cornerRadius: 8 } },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: t.texto } },
+      y: { beginAtZero: true, grid: { color: t.grade }, ticks: { color: t.texto }, border: { display: false } },
+    },
+    ...extras,
+  };
+}
+
+function desenharGraficos(lista) {
+  if (typeof Chart === "undefined") return;
+  const t = temaGrafico();
+  Chart.defaults.color = t.texto;
+  Chart.defaults.font.family = 'system-ui, -apple-system, "Segoe UI", sans-serif';
+
+  // Autonomia por abastecimento (linha, um eixo)
+  const comAut = lista.filter((r) => r.autonomia);
+  mostrarGrafico("cAutonomia", "vAutonomia", comAut.length >= 2);
+  if (comAut.length >= 2) {
+    criarGrafico("cAutonomia", {
+      type: "line",
+      data: {
+        labels: comAut.map((r) => formatarData(r.data).slice(0, 5)),
+        datasets: [{
+          label: "Autonomia (km)",
+          data: comAut.map((r) => r.autonomia),
+          borderColor: t.primaria,
+          backgroundColor: t.primaria + "22",
+          fill: true,
+          tension: 0.3,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+        }],
+      },
+      options: opcoesBase(t, {
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `${fmt(c.parsed.y, 0)} km` } } },
+      }),
+    });
+  }
+
+  // Consumo por abastecimento (barras)
+  const comCons = lista.filter((r) => r.consumo);
+  mostrarGrafico("cConsumo", "vConsumo", comCons.length > 0);
+  if (comCons.length) {
+    criarGrafico("cConsumo", {
+      type: "bar",
+      data: {
+        labels: comCons.map((r) => formatarData(r.data).slice(0, 5)),
+        datasets: [{
+          label: "km/L",
+          data: comCons.map((r) => r.consumo),
+          backgroundColor: t.primaria,
+          borderRadius: 6,
+          maxBarThickness: 40,
+        }],
+      },
+      options: opcoesBase(t, {
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `${fmt(c.parsed.y, 2)} km/L` } } },
+      }),
+    });
+  }
+
+  // Gasto por mês (barras, R$)
+  const mensal = gastoPorMes(lista);
+  mostrarGrafico("cMensal", "vMensal", mensal.valores.length > 0);
+  if (mensal.valores.length) {
+    criarGrafico("cMensal", {
+      type: "bar",
+      data: {
+        labels: mensal.labels,
+        datasets: [{ label: "Gasto (R$)", data: mensal.valores, backgroundColor: t.primaria, borderRadius: 6, maxBarThickness: 40 }],
+      },
+      options: opcoesBase(t, {
+        scales: {
+          x: { grid: { display: false }, ticks: { color: t.texto } },
+          y: { beginAtZero: true, grid: { color: t.grade }, ticks: { color: t.texto, callback: (v) => brl(v) }, border: { display: false } },
+        },
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => brl(c.parsed.y) } } },
+      }),
+    });
+  }
+
+  // Gasto por combustível (rosca, ordem fixa das categorias)
+  const porComb = COMBUSTIVEIS.map((nome) => lista.filter((r) => r.combustivel === nome).reduce((s, r) => s + Number(r.valor_total), 0));
+  const temComb = porComb.some((v) => v > 0);
+  mostrarGrafico("cCombustivel", "vCombustivel", temComb);
+  if (temComb) {
+    criarGrafico("cCombustivel", {
+      type: "doughnut",
+      data: {
+        labels: COMBUSTIVEIS,
+        datasets: [{ data: porComb, backgroundColor: t.series, borderColor: t.superficie, borderWidth: 2 }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: "62%",
+        plugins: {
+          legend: { position: "bottom", labels: { color: t.texto, usePointStyle: true, padding: 14 } },
+          tooltip: { callbacks: { label: (c) => `${c.label}: ${brl(c.parsed)}` } },
+        },
+      },
+    });
+  }
+}
+
+function renderIndicadores(lista, cap) {
+  const comAut = lista.filter((r) => r.autonomia);
+  const autonomias = comAut.map((r) => r.autonomia);
+  const consumos = lista.filter((r) => r.consumo).map((r) => r.consumo);
+  const custos = lista.filter((r) => r.custoKm).map((r) => r.custoKm);
+  const ultimo = comAut[comAut.length - 1];
+  const anteriores = comAut.slice(0, -1).map((r) => r.autonomia);
+  const mediaAut = media(autonomias);
+  const melhor = autonomias.length ? Math.max(...autonomias) : null;
+
+  // Destaque
+  $("heroAut").innerHTML = mediaAut ? `${fmt(mediaAut, 0)}<small>km</small>` : "—";
+  $("heroCap").textContent = `Tanque: ${fmt(cap)} L`;
+  if (ultimo && anteriores.length) {
+    const mediaAnt = media(anteriores);
+    const diff = ((ultimo.autonomia - mediaAnt) / mediaAnt) * 100;
+    const subiu = diff >= 0;
+    const chip = $("heroDelta");
+    chip.className = "chip " + (Math.abs(diff) < 1 ? "neutro" : subiu ? "bom" : "ruim");
+    chip.textContent = Math.abs(diff) < 1
+      ? "= Último abastecimento na média"
+      : `${subiu ? "▲" : "▼"} ${fmt(Math.abs(diff), 0)}% ${subiu ? "acima" : "abaixo"} da média anterior`;
+  } else {
+    $("heroDelta").className = "chip neutro";
+    $("heroDelta").textContent = autonomias.length ? "Registre mais um abastecimento para comparar" : "Registre abastecimentos com litros para ver a autonomia";
+  }
+  const pct = ultimo && melhor ? Math.round((ultimo.autonomia / melhor) * 100) : 0;
+  $("heroBarra").style.width = pct + "%";
+  $("heroBarraLegenda").textContent = ultimo
+    ? `Último abastecimento: ${fmt(ultimo.autonomia, 0)} km (${pct}% da melhor autonomia, ${fmt(melhor, 0)} km)`
+    : "";
+
+  // Indicadores
+  $("kMelhor").textContent = melhor ? `${fmt(melhor, 0)} km` : "—";
+  $("kConsumo").textContent = consumos.length ? fmt(media(consumos), 2) : "—";
+  $("kCustoKm").textContent = custos.length ? brl(media(custos)) : "—";
+
+  const agora = hoje().slice(0, 7);
+  const gastoMes = lista.filter((r) => r.data.slice(0, 7) === agora).reduce((s, r) => s + Number(r.valor_total), 0);
+  $("kMes").textContent = brl(gastoMes);
+  $("kTotal").textContent = brl(lista.reduce((s, r) => s + Number(r.valor_total), 0));
+
+  const kmTotal = lista.length > 1 ? Number(lista[lista.length - 1].odometro) - Number(lista[0].odometro) : 0;
+  $("kKm").textContent = kmTotal ? `${fmt(kmTotal, 0)} km` : "—";
 }
 
 function renderTudo() {
   const cap = Number(perfil.capacidade_tanque);
   const lista = calcular(abastecimentos, cap);
-  const comAutonomia = lista.filter((r) => r.autonomia);
-  const ultimo = [...lista].reverse().find((r) => r.autonomia);
-  const media = comAutonomia.length ? comAutonomia.reduce((s, r) => s + r.autonomia, 0) / comAutonomia.length : null;
 
   $("saudacao").textContent = perfil.nome_veiculo;
-  $("tanqueInfo").textContent = `${fmt(cap)} L`;
-  $("autUltima").textContent = ultimo ? `${fmt(ultimo.autonomia, 0)} km` : "—";
-  $("consUltimo").textContent = ultimo ? fmt(ultimo.consumo, 2) : "—";
-  $("autMedia").textContent = media ? `${fmt(media, 0)} km` : "—";
-  $("semRegistros").classList.toggle("hidden", lista.length > 0);
+  renderIndicadores(lista, cap);
+  desenharGraficos(lista);
 
+  $("semRegistros").classList.toggle("hidden", lista.length > 0);
   $("historico").innerHTML = [...lista].reverse().map((r) => `
     <tr>
       <td>${formatarData(r.data)}</td>
