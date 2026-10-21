@@ -31,6 +31,9 @@ button{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:1
 button.secondary{background:transparent;color:var(--accent);border:1px solid var(--accent);width:auto;padding:8px 14px;font-size:.9rem}
 button.perigo{background:transparent;color:var(--bad);border:1px solid var(--bad);width:auto;padding:8px 14px;font-size:.9rem}
 button.link{background:none;color:var(--accent);width:auto;padding:0;font-weight:500}
+button.google{background:var(--card);color:var(--text);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:10px;width:100%}
+.divisor{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:.85rem;margin:14px 0}
+.divisor::before,.divisor::after{content:"";flex:1;height:1px;background:var(--border)}
 button:disabled{opacity:.6;cursor:default}
 .muted{color:var(--muted)}
 .row{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
@@ -90,6 +93,11 @@ th.num,td.num{text-align:right}
       <label>Senha<input id="senha" type="password" minlength="6" autocomplete="current-password" required></label>
       <button type="submit" id="authBtn">Entrar</button>
     </form>
+    <div class="divisor"><span>ou</span></div>
+    <button type="button" class="google" id="loginGoogle">
+      <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.5l6.7-6.7C35.6 2.4 30.1 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.8 6C12.3 13.3 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4 7.1-10 7.1-17.5z"/><path fill="#FBBC05" d="M10.4 28.8c-.5-1.4-.8-2.9-.8-4.8s.3-3.4.8-4.8l-7.8-6C.9 16.5 0 20.1 0 24s.9 7.5 2.6 10.8l7.8-6z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.8 2.3-8.4 2.3-6.3 0-11.7-3.8-13.6-9.3l-7.8 6C6.5 42.6 14.6 48 24 48z"/></svg>
+      Entrar com Google
+    </button>
     <p class="row" style="margin-top:12px"><span id="authSwitchText" class="muted"></span><button type="button" class="link" id="authSwitch"></button></p>
     <div id="authMsg" class="msg"></div>
   </section>
@@ -274,6 +282,16 @@ $("authForm").onsubmit = async (e) => {
 };
 
 $("logoutBtn").onclick = async () => { await db.auth.signOut(); };
+
+// Mesmo fluxo do Trilha de Carreira: volta para esta mesma página após o login no Google.
+$("loginGoogle").onclick = async () => {
+  $("authMsg").textContent = "";
+  const { error } = await db.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: `${location.origin}${location.pathname}` },
+  });
+  if (error) $("authMsg").textContent = "Não foi possível entrar com o Google: " + error.message;
+};
 
 /* ---------- Sessão e dados ---------- */
 
@@ -691,6 +709,7 @@ if (!configOk) {
   $("configAlert").classList.remove("hidden");
   setView("auth");
   $("authBtn").disabled = true;
+  $("loginGoogle").disabled = true;
 }
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
   navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => {});
