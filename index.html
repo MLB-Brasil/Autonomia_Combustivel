@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Autonomia do Veículo</title>
+<meta name="theme-color" content="#1f6feb">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+:root{--bg:#f4f6f9;--card:#fff;--text:#1c2430;--muted:#6b7686;--accent:#1f6feb;--danger:#cf222e;--border:#dde2ea}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text)}
+header{background:var(--accent);color:#fff;padding:16px 20px}
+header h1{margin:0;font-size:1.2rem}
+main{max-width:640px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px}
+h2{font-size:1rem;margin:0 0 12px}
+label{display:block;font-size:.85rem;color:var(--muted);margin-bottom:10px}
+input,select{width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:1rem;margin-top:4px;background:#fff;color:var(--text)}
+button{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:11px 16px;font-size:1rem;cursor:pointer;width:100%}
+button.secondary{background:#fff;color:var(--accent);border:1px solid var(--accent);width:auto}
+button.link{background:none;color:var(--accent);width:auto;padding:0}
+button:disabled{opacity:.6;cursor:default}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.stat{background:#f7f9fc;border-radius:10px;padding:12px}
+.stat span{display:block;font-size:.8rem;color:var(--muted)}
+.stat strong{font-size:1.4rem}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{text-align:left;padding:8px 4px;border-bottom:1px solid var(--border)}
+th.num,td.num{text-align:right}
+.msg{font-size:.9rem;margin-top:8px;color:var(--danger)}
+.muted{color:var(--muted)}
+.row{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.acoes{display:flex;gap:8px;margin-top:12px}
+.acoes button{flex:1}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<header><h1>Autonomia do Veículo</h1></header>
+<main>
+  <div id="configAlert" class="card hidden">Configure o arquivo <b>config.js</b> com a URL e a chave do Supabase.</div>
+
+  <section id="authView" class="card hidden">
+    <h2 id="authTitle">Entrar</h2>
+    <form id="authForm">
+      <div id="signupFields" class="hidden">
+        <label>Nome do veículo<input id="veiculoCad" placeholder="Ex.: Gol 2018"></label>
+        <label>Capacidade do tanque (litros)<input id="capacidadeCad" type="number" step="0.1" min="1" inputmode="decimal"></label>
+      </div>
+      <label>E-mail<input id="email" type="email" autocomplete="email" required></label>
+      <label>Senha<input id="senha" type="password" minlength="6" autocomplete="current-password" required></label>
+      <button type="submit" id="authBtn">Entrar</button>
+    </form>
+    <p class="row" style="margin-top:12px"><span id="authSwitchText" class="muted"></span><button type="button" class="link" id="authSwitch"></button></p>
+    <div id="authMsg" class="msg"></div>
+  </section>
+
+  <section id="profileView" class="card hidden">
+    <h2>Dados do veículo</h2>
+    <form id="profileForm">
+      <label>Nome do veículo<input id="veiculo" placeholder="Ex.: Gol 2018" required></label>
+      <label>Capacidade do tanque (litros)<input id="capacidade" type="number" step="0.1" min="1" inputmode="decimal" required></label>
+      <div class="acoes">
+        <button type="submit">Salvar</button>
+        <button type="button" class="secondary hidden" id="profileCancel">Voltar</button>
+      </div>
+    </form>
+    <div id="profileMsg" class="msg"></div>
+  </section>
+
+  <section id="appView" class="hidden">
+    <div class="card">
+      <div class="row">
+        <h2 id="saudacao"></h2>
+        <div class="row">
+          <button type="button" class="secondary" id="editarBtn">Editar veículo</button>
+          <button type="button" class="secondary" id="logoutBtn">Sair</button>
+        </div>
+      </div>
+      <div class="stats">
+        <div class="stat"><span>Autonomia (último abastecimento)</span><strong id="autUltima">—</strong></div>
+        <div class="stat"><span>Autonomia média</span><strong id="autMedia">—</strong></div>
+        <div class="stat"><span>Consumo do último (km/L)</span><strong id="consUltimo">—</strong></div>
+        <div class="stat"><span>Capacidade do tanque</span><strong id="tanqueInfo">—</strong></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Novo abastecimento</h2>
+      <form id="refuelForm">
+        <label>Data<input id="data" type="date" required></label>
+        <label>Combustível
+          <select id="combustivel" required>
+            <option>Gasolina</option>
+            <option>Etanol</option>
+            <option>Diesel</option>
+          </select>
+        </label>
+        <label>Valor total (R$)<input id="valor" type="number" step="0.01" min="0.01" inputmode="decimal" required></label>
+        <label>Preço por litro (R$)<input id="precoLitro" type="number" step="0.001" min="0.001" inputmode="decimal" required></label>
+        <label>Odômetro (km)<input id="odometro" type="number" step="1" min="0" inputmode="numeric" required></label>
+        <p id="litrosCalc" class="muted" style="margin:0 0 12px"></p>
+        <button type="submit">Salvar abastecimento</button>
+      </form>
+      <div id="refuelMsg" class="msg"></div>
+    </div>
+
+    <div class="card">
+      <h2>Histórico</h2>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr><th>Data</th><th>Comb.</th><th class="num">Litros</th><th class="num">Km</th><th class="num">km/L</th><th class="num">Autonomia</th><th></th></tr>
+          </thead>
+          <tbody id="historico"></tbody>
+        </table>
+      </div>
+      <p id="semRegistros" class="muted">Nenhum abastecimento registrado.</p>
+    </div>
+  </section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+const cfg = window.AUTONOMIA_CONFIG || {};
+const configOk = /^https:\/\/.+\.supabase\.co$/i.test(cfg.supabaseUrl || "") && Boolean(cfg.supabaseAnonKey) && Boolean(window.supabase);
+const db = configOk ? window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey) : null;
+const PENDENTE = "autonomia.pendente";
+
+let modoCadastro = false;
+let user = null;
+let perfil = null;
+let abastecimentos = [];
+
+const fmt = (n, d = 1) => Number(n).toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d });
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const formatarData = (s) => s.split("-").reverse().join("/");
+const hoje = () => new Date().toISOString().slice(0, 10);
+
+function setView(view) {
+  $("authView").classList.toggle("hidden", view !== "auth");
+  $("profileView").classList.toggle("hidden", view !== "profile");
+  $("appView").classList.toggle("hidden", view !== "app");
+}
+
+/* ---------- Autenticação ---------- */
+
+function setModo(cadastro) {
+  modoCadastro = cadastro;
+  $("signupFields").classList.toggle("hidden", !cadastro);
+  $("veiculoCad").required = cadastro;
+  $("capacidadeCad").required = cadastro;
+  $("authTitle").textContent = cadastro ? "Criar conta" : "Entrar";
+  $("authBtn").textContent = cadastro ? "Criar conta" : "Entrar";
+  $("authSwitchText").textContent = cadastro ? "Já tem conta?" : "Não tem conta?";
+  $("authSwitch").textContent = cadastro ? "Entrar" : "Criar conta";
+  $("authMsg").textContent = "";
+}
+$("authSwitch").onclick = () => setModo(!modoCadastro);
+
+$("authForm").onsubmit = async (e) => {
+  e.preventDefault();
+  const email = $("email").value.trim();
+  const senha = $("senha").value;
+  $("authMsg").textContent = "";
+  $("authBtn").disabled = true;
+  try {
+    if (modoCadastro) {
+      const capacidade = Number($("capacidadeCad").value);
+      if (!(capacidade > 0)) throw new Error("Informe a capacidade do tanque.");
+      // Guarda os dados do veículo: são gravados assim que a sessão existir (inclusive após confirmar o e-mail).
+      localStorage.setItem(PENDENTE, JSON.stringify({ veiculo: $("veiculoCad").value.trim(), capacidade }));
+      const { data, error } = await db.auth.signUp({ email, password: senha });
+      if (error) { localStorage.removeItem(PENDENTE); throw error; }
+      if (!data.session) $("authMsg").textContent = "Conta criada. Confirme o e-mail e depois entre.";
+    } else {
+      const { error } = await db.auth.signInWithPassword({ email, password: senha });
+      if (error) throw error;
+    }
+  } catch (err) {
+    $("authMsg").textContent = err.message || "Não foi possível concluir.";
+  } finally {
+    $("authBtn").disabled = false;
+  }
+};
+
+$("logoutBtn").onclick = async () => { await db.auth.signOut(); };
+
+/* ---------- Sessão e dados ---------- */
+
+async function carregarSessao(session) {
+  user = session?.user || null;
+  if (!user) { perfil = null; abastecimentos = []; setView("auth"); return; }
+
+  try {
+    const pend = JSON.parse(localStorage.getItem(PENDENTE) || "null");
+    if (pend) {
+      const { error } = await db.from("fuel_profiles").upsert({ user_id: user.id, nome_veiculo: pend.veiculo || "Meu veículo", capacidade_tanque: pend.capacidade });
+      if (error) throw error;
+      localStorage.removeItem(PENDENTE);
+    }
+
+    const { data, error } = await db.from("fuel_profiles").select("nome_veiculo,capacidade_tanque").eq("user_id", user.id).maybeSingle();
+    if (error) throw error;
+    perfil = data;
+
+    if (!perfil) { abrirPerfil(false); return; }
+    await carregarAbastecimentos();
+    renderTudo();
+    setView("app");
+  } catch (err) {
+    $("authMsg").textContent = "Erro ao carregar seus dados: " + err.message;
+    setView("auth");
+  }
+}
+
+db?.auth.onAuthStateChange((_evento, session) => carregarSessao(session));
+
+async function carregarAbastecimentos() {
+  const { data, error } = await db.from("fuel_refuels").select("*").eq("user_id", user.id).order("odometro", { ascending: true });
+  if (error) throw error;
+  abastecimentos = data || [];
+}
+
+function abrirPerfil(podeVoltar) {
+  $("veiculo").value = perfil?.nome_veiculo || "";
+  $("capacidade").value = perfil?.capacidade_tanque || "";
+  $("profileCancel").classList.toggle("hidden", !podeVoltar);
+  $("profileMsg").textContent = "";
+  setView("profile");
+}
+
+$("editarBtn").onclick = () => abrirPerfil(true);
+$("profileCancel").onclick = () => setView("app");
+
+$("profileForm").onsubmit = async (e) => {
+  e.preventDefault();
+  const nome = $("veiculo").value.trim();
+  const capacidade = Number($("capacidade").value);
+  const { error } = await db.from("fuel_profiles").upsert({ user_id: user.id, nome_veiculo: nome, capacidade_tanque: capacidade });
+  if (error) { $("profileMsg").textContent = error.message; return; }
+  perfil = { nome_veiculo: nome, capacidade_tanque: capacidade };
+  await carregarAbastecimentos();
+  renderTudo();
+  setView("app");
+};
+
+/* ---------- Cálculo ---------- */
+
+// Consumo = km rodados desde o abastecimento anterior ÷ litros deste abastecimento.
+// Autonomia = consumo × capacidade do tanque (assume que o tanque foi completado em cada abastecimento).
+function calcular(lista, capacidade) {
+  return lista.map((r, i) => {
+    const anterior = lista[i - 1];
+    const km = anterior ? Number(r.odometro) - Number(anterior.odometro) : null;
+    const consumo = km > 0 ? km / Number(r.litros) : null;
+    const autonomia = consumo ? consumo * capacidade : null;
+    return { ...r, km, consumo, autonomia };
+  });
+}
+
+function renderTudo() {
+  const cap = Number(perfil.capacidade_tanque);
+  const lista = calcular(abastecimentos, cap);
+  const comAutonomia = lista.filter((r) => r.autonomia);
+  const ultimo = [...lista].reverse().find((r) => r.autonomia);
+  const media = comAutonomia.length ? comAutonomia.reduce((s, r) => s + r.autonomia, 0) / comAutonomia.length : null;
+
+  $("saudacao").textContent = perfil.nome_veiculo;
+  $("tanqueInfo").textContent = `${fmt(cap)} L`;
+  $("autUltima").textContent = ultimo ? `${fmt(ultimo.autonomia, 0)} km` : "—";
+  $("consUltimo").textContent = ultimo ? fmt(ultimo.consumo, 2) : "—";
+  $("autMedia").textContent = media ? `${fmt(media, 0)} km` : "—";
+  $("semRegistros").classList.toggle("hidden", lista.length > 0);
+
+  $("historico").innerHTML = [...lista].reverse().map((r) => `
+    <tr>
+      <td>${formatarData(r.data)}</td>
+      <td>${esc(r.combustivel)}</td>
+      <td class="num">${fmt(r.litros, 2)}</td>
+      <td class="num">${fmt(r.odometro, 0)}</td>
+      <td class="num">${r.consumo ? fmt(r.consumo, 2) : "—"}</td>
+      <td class="num">${r.autonomia ? fmt(r.autonomia, 0) + " km" : "—"}</td>
+      <td><button type="button" class="link" data-del="${r.id}">Excluir</button></td>
+    </tr>`).join("");
+}
+
+/* ---------- Abastecimentos ---------- */
+
+function litrosPrevistos() {
+  const valor = Number($("valor").value);
+  const preco = Number($("precoLitro").value);
+  return valor > 0 && preco > 0 ? valor / preco : null;
+}
+
+function atualizarLitros() {
+  const l = litrosPrevistos();
+  $("litrosCalc").textContent = l ? `Litros: ${fmt(l, 2)}` : "";
+}
+$("valor").oninput = atualizarLitros;
+$("precoLitro").oninput = atualizarLitros;
+
+$("refuelForm").onsubmit = async (e) => {
+  e.preventDefault();
+  $("refuelMsg").textContent = "";
+  const valor = Number($("valor").value);
+  const preco = Number($("precoLitro").value);
+  const odo = Number($("odometro").value);
+  const litros = valor / preco;
+
+  const maior = abastecimentos.reduce((m, r) => Math.max(m, Number(r.odometro)), -Infinity);
+  if (abastecimentos.length && odo <= maior) {
+    $("refuelMsg").textContent = `O odômetro precisa ser maior que ${fmt(maior, 0)} km (último registro).`;
+    return;
+  }
+
+  const { error } = await db.from("fuel_refuels").insert({
+    user_id: user.id,
+    data: $("data").value,
+    combustivel: $("combustivel").value,
+    valor_total: valor,
+    preco_litro: preco,
+    litros: Number(litros.toFixed(3)),
+    odometro: odo,
+  });
+  if (error) { $("refuelMsg").textContent = error.message; return; }
+
+  e.target.reset();
+  $("data").value = hoje();
+  atualizarLitros();
+  await carregarAbastecimentos();
+  renderTudo();
+};
+
+$("historico").onclick = async (e) => {
+  const id = e.target.dataset.del;
+  if (!id || !confirm("Excluir este abastecimento?")) return;
+  const { error } = await db.from("fuel_refuels").delete().eq("id", id);
+  if (error) { alert(error.message); return; }
+  await carregarAbastecimentos();
+  renderTudo();
+};
+
+/* ---------- Inicialização ---------- */
+
+$("data").value = hoje();
+setModo(false);
+if (!configOk) {
+  $("configAlert").classList.remove("hidden");
+  setView("auth");
+  $("authBtn").disabled = true;
+}
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => {});
+}
+</script>
+</body>
+</html>
