@@ -261,7 +261,7 @@ function calcular(lista, capacidade) {
   return lista.map((r, i) => {
     const anterior = lista[i - 1];
     const km = anterior ? Number(r.odometro) - Number(anterior.odometro) : null;
-    const consumo = km > 0 ? km / Number(r.litros) : null;
+    const consumo = km > 0 && r.litros ? km / Number(r.litros) : null;
     const autonomia = consumo ? consumo * capacidade : null;
     return { ...r, km, consumo, autonomia };
   });
@@ -285,7 +285,7 @@ function renderTudo() {
     <tr>
       <td>${formatarData(r.data)}</td>
       <td>${esc(r.combustivel)}</td>
-      <td class="num">${fmt(r.litros, 2)}</td>
+      <td class="num">${r.litros ? fmt(r.litros, 2) : "—"}</td>
       <td class="num">${fmt(r.odometro, 0)}</td>
       <td class="num">${r.consumo ? fmt(r.consumo, 2) : "—"}</td>
       <td class="num">${r.autonomia ? fmt(r.autonomia, 0) + " km" : "—"}</td>
@@ -316,11 +316,7 @@ $("refuelForm").onsubmit = async (e) => {
   const precoInformado = Number($("precoLitro").value) || null;
   const litrosInformados = Number($("litros").value) || null;
   const odo = Number($("odometro").value);
-  const litros = litrosInformados || (precoInformado ? valor / precoInformado : null);
-  if (!litros) {
-    $("refuelMsg").textContent = "Informe os litros ou o preço por litro.";
-    return;
-  }
+  const litros = litrosInformados || (precoInformado && valor ? valor / precoInformado : null);
 
   const maior = abastecimentos.reduce((m, r) => Math.max(m, Number(r.odometro)), -Infinity);
   if (abastecimentos.length && odo <= maior) {
@@ -334,7 +330,7 @@ $("refuelForm").onsubmit = async (e) => {
     combustivel: $("combustivel").value,
     valor_total: valor,
     preco_litro: precoInformado,
-    litros: Number(litros.toFixed(3)),
+    litros: litros ? Number(litros.toFixed(3)) : null,
     odometro: odo,
   });
   if (error) { $("refuelMsg").textContent = error.message; return; }
