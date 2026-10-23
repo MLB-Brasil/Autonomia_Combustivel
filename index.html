@@ -49,6 +49,7 @@ button.lancar{width:auto;padding:8px 14px;font-size:.9rem}
 /* Diálogo de novo abastecimento */
 dialog{background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:var(--radius);padding:18px;width:min(420px,calc(100% - 32px));max-height:90vh;overflow-y:auto;box-shadow:var(--shadow)}
 dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog.dlg-largo{width:min(760px,calc(100% - 32px))}
 
 /* Destaque */
 .hero{background:linear-gradient(135deg,rgba(42,120,214,.12),rgba(42,120,214,0));}
@@ -129,6 +130,7 @@ th.num,td.num{text-align:right}
       <select id="seletorVeiculo" class="seletor" aria-label="Veículo"></select>
       <div class="row">
         <button type="button" class="lancar" id="abrirLancamento">+ Abastecimento</button>
+        <button type="button" class="secondary" id="abrirHistorico">Ver histórico</button>
         <button type="button" class="secondary" id="novoVeiculoBtn">+ Veículo</button>
         <button type="button" class="secondary" id="editarBtn">Editar</button>
         <button type="button" class="secondary" id="logoutBtn">Sair</button>
@@ -144,6 +146,20 @@ th.num,td.num{text-align:right}
       </div>
       <div class="barra"><div id="heroBarra" style="width:0%"></div></div>
       <div class="barra-legenda" id="heroBarraLegenda"></div>
+    </div>
+
+    <div class="card">
+      <h2>Comparativo por combustível</h2>
+      <p id="recomendacaoComb" class="destaque-comb"></p>
+      <div class="tabela-scroll">
+        <table>
+          <thead>
+            <tr><th>Combustível</th><th class="num">Abastec.</th><th class="num">km/L</th><th class="num">Autonomia</th><th class="num">Custo/km</th></tr>
+          </thead>
+          <tbody id="comparativoComb"></tbody>
+        </table>
+      </div>
+      <p class="muted" style="font-size:.8rem;margin:10px 0 0">Custo/km = valor do abastecimento ÷ km desde o abastecimento anterior.</p>
     </div>
 
     <div class="kpis">
@@ -178,37 +194,24 @@ th.num,td.num{text-align:right}
       </div>
     </div>
 
-    <div class="card">
-      <h2>Comparativo por combustível</h2>
-      <p id="recomendacaoComb" class="destaque-comb"></p>
-      <div class="tabela-scroll">
-        <table>
-          <thead>
-            <tr><th>Combustível</th><th class="num">Abastec.</th><th class="num">km/L</th><th class="num">Autonomia</th><th class="num">Custo/km</th></tr>
-          </thead>
-          <tbody id="comparativoComb"></tbody>
-        </table>
-      </div>
-      <p class="muted" style="font-size:.8rem;margin:10px 0 0">Custo/km = valor do abastecimento ÷ km desde o abastecimento anterior.</p>
-    </div>
-
-    <div class="card">
-      <div class="row" style="margin-bottom:12px">
-        <h2 style="margin:0">Histórico</h2>
-        <button type="button" class="lancar" id="abrirLancamentoHist">+ Abastecimento</button>
-      </div>
-      <div class="tabela-scroll">
-        <table>
-          <thead>
-            <tr><th>Data</th><th>Comb.</th><th class="num">Litros</th><th class="num">Km</th><th class="num">km/L</th><th class="num">Autonomia</th><th></th></tr>
-          </thead>
-          <tbody id="historico"></tbody>
-        </table>
-      </div>
-      <p id="semRegistros" class="muted">Nenhum abastecimento registrado.</p>
-    </div>
   </section>
 </main>
+
+<dialog id="dlgHistorico" class="dlg-largo">
+  <div class="row" style="margin-bottom:12px">
+    <h2 style="margin:0">Histórico</h2>
+    <button type="button" class="secondary" id="fecharHistorico">Fechar</button>
+  </div>
+  <div class="tabela-scroll">
+    <table>
+      <thead>
+        <tr><th>Data</th><th>Comb.</th><th class="num">Litros</th><th class="num">Km</th><th class="num">km/L</th><th class="num">Autonomia</th><th></th></tr>
+      </thead>
+      <tbody id="historico"></tbody>
+    </table>
+  </div>
+  <p id="semRegistros" class="muted">Nenhum abastecimento registrado.</p>
+</dialog>
 
 <dialog id="dlgAbastecimento">
   <h2>Novo abastecimento</h2>
@@ -781,7 +784,8 @@ function abrirLancamento() {
   $("dlgAbastecimento").showModal();
 }
 $("abrirLancamento").onclick = abrirLancamento;
-$("abrirLancamentoHist").onclick = abrirLancamento;
+$("abrirHistorico").onclick = () => $("dlgHistorico").showModal();
+$("fecharHistorico").onclick = () => $("dlgHistorico").close();
 $("cancelarLancamento").onclick = () => $("dlgAbastecimento").close();
 
 $("historico").onclick = async (e) => {
