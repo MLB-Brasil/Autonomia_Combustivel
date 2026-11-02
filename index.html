@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
@@ -31,6 +31,7 @@ button{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:1
 button.secondary{background:transparent;color:var(--accent);border:1px solid var(--accent);width:auto;padding:8px 14px;font-size:.9rem}
 button.perigo{background:transparent;color:var(--bad);border:1px solid var(--bad);width:auto;padding:8px 14px;font-size:.9rem}
 button.link{background:none;color:var(--accent);width:auto;padding:0;font-weight:500}
+button.link.perigo-link{color:var(--bad)}
 button.google{background:var(--card);color:var(--text);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:10px;width:100%}
 .divisor{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:.85rem;margin:14px 0}
 .divisor::before,.divisor::after{content:"";flex:1;height:1px;background:var(--border)}
@@ -214,8 +215,9 @@ th.num,td.num{text-align:right}
 </dialog>
 
 <dialog id="dlgAbastecimento">
-  <h2>Novo abastecimento</h2>
+  <h2 id="tituloAbastecimento">Novo abastecimento</h2>
   <form id="refuelForm">
+    <input type="hidden" id="refuelId">
     <label>Veículo
       <select id="seletorLancamento" required aria-label="Veículo do abastecimento"></select>
     </label>
@@ -235,7 +237,7 @@ th.num,td.num{text-align:right}
     <p id="litrosCalc" class="muted" style="margin:0 0 12px"></p>
     <div class="acoes">
       <button type="button" class="secondary" id="cancelarLancamento">Cancelar</button>
-      <button type="submit">Salvar abastecimento</button>
+      <button type="submit" id="salvarAbastecimento">Salvar abastecimento</button>
     </div>
   </form>
   <div id="refuelMsg" class="msg"></div>
@@ -720,7 +722,7 @@ function renderTudo() {
       <td class="num">${fmt(r.odometro, 0)}</td>
       <td class="num">${r.consumo ? fmt(r.consumo, 2) : "—"}</td>
       <td class="num">${r.autonomia ? fmt(r.autonomia, 0) + " km" : "—"}</td>
-      <td><button type="button" class="link" data-del="${r.id}">Excluir</button></td>
+      <td class="acoes-linha"><button type="button" class="link" data-edit="${r.id}">Editar</button> <button type="button" class="link perigo-link" data-del="${r.id}">Excluir</button></td>
     </tr>`).join("");
 }
 
@@ -740,6 +742,9 @@ $("valor").oninput = atualizarLitros;
 $("precoLitro").oninput = atualizarLitros;
 $("litros").oninput = atualizarLitros;
 
+// editandoId = null -> novo abastecimento; senão, edição do registro informado.
+let editandoId = null;
+
 $("refuelForm").onsubmit = async (e) => {
   e.preventDefault();
   $("refuelMsg").textContent = "";
@@ -750,22 +755,26 @@ $("refuelForm").onsubmit = async (e) => {
   const odo = Number($("odometro").value);
   const litros = litrosInformados || (precoInformado && valor ? valor / precoInformado : null);
 
-  const maior = abastecimentos.reduce((m, r) => Math.max(m, Number(r.odometro)), -Infinity);
-  if (abastecimentos.length && odo <= maior) {
+  // Na edição, o próprio registro não entra na comparação do odômetro.
+  const outros = abastecimentos.filter((r) => r.id !== editandoId);
+  const maior = outros.reduce((m, r) => Math.max(m, Number(r.odometro)), -Infinity);
+  if (outros.length && odo <= maior) {
     $("refuelMsg").textContent = `O odômetro precisa ser maior que ${fmt(maior, 0)} km (último registro deste veículo).`;
     return;
   }
 
-  const { error } = await db.from("fuel_refuels").insert({
-    user_id: user.id,
-    vehicle_id: veiculoAtivoId,
+  const dados = {
     data: $("data").value,
     combustivel: $("combustivel").value,
     valor_total: valor,
     preco_litro: precoInformado,
     litros: litros ? Number(litros.toFixed(3)) : null,
     odometro: odo,
-  });
+  };
+  const consulta = editandoId
+    ? db.from("fuel_refuels").update(dados).eq("id", editandoId)
+    : db.from("fuel_refuels").insert({ ...dados, user_id: user.id, vehicle_id: veiculoAtivoId });
+  const { error } = await consulta;
   if (error) { $("refuelMsg").textContent = error.message; return; }
 
   e.target.reset();
@@ -777,18 +786,46 @@ $("refuelForm").onsubmit = async (e) => {
   $("dlgAbastecimento").close();
 };
 
-function abrirLancamento() {
+function prepararDialogo(registro) {
+  editandoId = registro?.id || null;
   $("refuelMsg").textContent = "";
+  $("refuelId").value = editandoId || "";
+  $("tituloAbastecimento").textContent = editandoId ? "Editar abastecimento" : "Novo abastecimento";
+  $("salvarAbastecimento").textContent = editandoId ? "Salvar alterações" : "Salvar abastecimento";
+  // Na edição, o abastecimento permanece no veículo em que foi registrado.
+  $("seletorLancamento").disabled = Boolean(editandoId);
   renderSeletor();
+  if (registro) {
+    $("data").value = registro.data;
+    $("combustivel").value = registro.combustivel;
+    $("valor").value = registro.valor_total;
+    $("precoLitro").value = registro.preco_litro ?? "";
+    $("litros").value = registro.litros ?? "";
+    $("odometro").value = registro.odometro;
+  } else {
+    $("refuelForm").reset();
+    $("data").value = hoje();
+  }
   atualizarLitros();
+}
+
+function abrirLancamento() {
+  prepararDialogo(null);
   $("dlgAbastecimento").showModal();
 }
 $("abrirLancamento").onclick = abrirLancamento;
 $("abrirHistorico").onclick = () => $("dlgHistorico").showModal();
 $("fecharHistorico").onclick = () => $("dlgHistorico").close();
 $("cancelarLancamento").onclick = () => $("dlgAbastecimento").close();
+$("dlgAbastecimento").addEventListener("close", () => { editandoId = null; $("seletorLancamento").disabled = false; });
 
 $("historico").onclick = async (e) => {
+  const editar = e.target.dataset.edit;
+  if (editar) {
+    prepararDialogo(abastecimentos.find((r) => r.id === editar));
+    $("dlgAbastecimento").showModal();
+    return;
+  }
   const id = e.target.dataset.del;
   if (!id || !confirm("Excluir este abastecimento?")) return;
   const { error } = await db.from("fuel_refuels").delete().eq("id", id);
