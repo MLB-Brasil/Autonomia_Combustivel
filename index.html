@@ -756,10 +756,17 @@ $("refuelForm").onsubmit = async (e) => {
   const litros = litrosInformados || (precoInformado && valor ? valor / precoInformado : null);
 
   // Na edição, o próprio registro não entra na comparação do odômetro.
+  // O odômetro deve ficar entre o abastecimento anterior e o seguinte, pela data (permite lançar registros retroativos).
+  const data = $("data").value;
   const outros = abastecimentos.filter((r) => r.id !== editandoId);
-  const maior = outros.reduce((m, r) => Math.max(m, Number(r.odometro)), -Infinity);
-  if (outros.length && odo <= maior) {
-    $("refuelMsg").textContent = `O odômetro precisa ser maior que ${fmt(maior, 0)} km (último registro deste veículo).`;
+  const anterior = outros.filter((r) => r.data <= data).reduce((m, r) => (!m || Number(r.odometro) > Number(m.odometro) ? r : m), null);
+  const seguinte = outros.filter((r) => r.data > data).reduce((m, r) => (!m || Number(r.odometro) < Number(m.odometro) ? r : m), null);
+  if (anterior && odo <= Number(anterior.odometro)) {
+    $("refuelMsg").textContent = `O odômetro precisa ser maior que ${fmt(anterior.odometro, 0)} km (abastecimento de ${formatarData(anterior.data)}).`;
+    return;
+  }
+  if (seguinte && odo >= Number(seguinte.odometro)) {
+    $("refuelMsg").textContent = `O odômetro precisa ser menor que ${fmt(seguinte.odometro, 0)} km (abastecimento de ${formatarData(seguinte.data)}).`;
     return;
   }
 
